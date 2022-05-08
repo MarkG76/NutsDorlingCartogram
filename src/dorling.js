@@ -173,8 +173,10 @@ export function dorling() {
   out.sizeDatasetName_ = null;
   out.colorDatasetName_ = "";
   out.sizeDatasetFilters_ = "sex=T&age=TOTAL&unit=NR&time=2018";
+  out.sizeDatasetFilters3_ = out.sizeDatasetFilters_;
   out.colorDatasetCode_ = "demo_r_gind3";
   out.colorDatasetFilters_ = "indic_de=GROWRT&time=2018";
+  out.colorDatasetFilters3_ = out.colorDatasetFilters_;
   out.exclude_ = []; //list of country codes to exclude from the data
   out.EUIds = ["EU", "EU27_2020", "EU28"] //EU ids to omit from size values
   out.colorIsPercentage_ = false;
@@ -333,7 +335,7 @@ export function dorling() {
     let container = document.createElement("div");
     container.classList.add("sources-popup");
 
-    let template = ` 
+    let template = `
     <!-- Modal -->
     <div id="sources_overlay" class="modal fade" role="dialog">
         <div class="modal-dialog">
@@ -425,52 +427,34 @@ export function dorling() {
     //data promises
     let promises = [];
     //add exeption for GDP at NUTS 3 level (no data for latest year so overrides to previous year)
-    if (out.nutsLevel_ == 3 && out.sizeDatasetCode_ == "nama_10r_3gdp" && out.colorDatasetFilters_ == "unit=PPS_EU27_2020_HAB&time=2019") {
-      promises.push(
-        d3fetch.json(
-          //centroids
-          `https://raw.githubusercontent.com/eurostat/NutsDorlingCartogram/master/assets/topojson/nuts2json/nutspt_${out.nutsLevel_}.json`
-        ),
-        d3fetch.json(
-          //NUTS
-          `${out.Nuts2jsonBaseURL}${out.nutsLevel_}.json`
-        ),
-        d3fetch.json(
-          //countries
-          `https://raw.githubusercontent.com/eurostat/NutsDorlingCartogram/master/assets/topojson/countries.json`),
-        d3fetch.json(
-          //sizeData
-          `${out.eurostatRESTBaseURL}${out.sizeDatasetCode_}?geoLevel=${nutsParam}&unit=MIO_EUR&time=2018&filterNonGeo=1`
-        ),
-        d3fetch.json(
-          //colorData
-          `${out.eurostatRESTBaseURL}${out.colorDatasetCode_}?geoLevel=${nutsParam}&unit=PPS_EU27_2020_HAB&time=2018&filterNonGeo=1`
-        ),
-      );
-    } else {
-      promises.push(
-        d3fetch.json(
-          //centroids
-          `https://raw.githubusercontent.com/eurostat/NutsDorlingCartogram/master/assets/topojson/nuts2json/nutspt_${out.nutsLevel_}.json`
-        ),
-        d3fetch.json(
-          //NUTS
-          `${out.Nuts2jsonBaseURL}${out.nutsLevel_}.json`
-        ),
-        d3fetch.json(
-          //countries
-          `https://raw.githubusercontent.com/eurostat/NutsDorlingCartogram/master/assets/topojson/countries.json`
-        ),
-        d3fetch.json(
-          //sizeData
-          `${out.eurostatRESTBaseURL}${out.sizeDatasetCode_}?geoLevel=${nutsParam}&${out.sizeDatasetFilters_}&filterNonGeo=1`
-        ),
-        d3fetch.json(
-          //colorData
-          `${out.eurostatRESTBaseURL}${out.colorDatasetCode_}?geoLevel=${nutsParam}&${out.colorDatasetFilters_}&filterNonGeo=1`
-        ),
-      );
+    if (out.nutsLevel_ == 3 && out.colorDatasetFilters3_) {
+      out.sizeDatasetFilters_ = out.sizeDatasetFilters3_;
+      out.colorDatasetFilters_ = out.colorDatasetFilters3_;
     }
+    // get data
+    promises.push(
+      d3fetch.json(
+        //centroids
+        `https://raw.githubusercontent.com/eurostat/NutsDorlingCartogram/master/assets/topojson/nuts2json/nutspt_${out.nutsLevel_}.json`
+      ),
+      d3fetch.json(
+        //NUTS
+        `${out.Nuts2jsonBaseURL}${out.nutsLevel_}.json`
+      ),
+      d3fetch.json(
+        //countries
+        `https://raw.githubusercontent.com/eurostat/NutsDorlingCartogram/master/assets/topojson/countries.json`
+      ),
+      d3fetch.json(
+        //sizeData
+        `${out.eurostatRESTBaseURL}${out.sizeDatasetCode_}?geoLevel=${nutsParam}&${out.sizeDatasetFilters_}&filterNonGeo=1`
+      ),
+      d3fetch.json(
+        //colorData
+        `${out.eurostatRESTBaseURL}${out.colorDatasetCode_}?geoLevel=${nutsParam}&${out.colorDatasetFilters_}&filterNonGeo=1`
+      ),
+    );
+
 
     //bag of mixed NUTS
     // add specified NUTS IDs (of any NUTS level) to the current nuts level
@@ -1890,7 +1874,7 @@ export function dorling() {
 
   function getTranslation(transform) {
     // Create a dummy g for calculation purposes only. This will never
-    // be appended to the DOM and will be discarded once this function 
+    // be appended to the DOM and will be discarded once this function
     // returns.
     var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
@@ -1899,7 +1883,7 @@ export function dorling() {
 
     // consolidate the SVGTransformList containing all transformations
     // to a single SVGTransform of type SVG_TRANSFORM_MATRIX and get
-    // its SVGMatrix. 
+    // its SVGMatrix.
     var matrix = g.transform.baseVal.consolidate().matrix;
 
     // As per definition values e and f are the ones for the translation.
@@ -2490,7 +2474,7 @@ export function dorling() {
    * returns a radius from an indicator value using the defined d3 sizing scale
    *
    * @param {float} v indicator value
-   * @return {float} 
+   * @return {float}
    */
   function sizeFunction(v) {
     // let r = out.circleExaggerationFactor_ * 0.005 * Math.sqrt(val);
@@ -2599,7 +2583,7 @@ export function dorling() {
  *
  * @param {*} data //REST query reponse data
  * @param {*} type //type of data (colour or size)
- * @param {*} out 
+ * @param {*} out
  * @param {*} resolve
  * @param {*} reject
  */
@@ -2654,7 +2638,7 @@ function indexStat(data, type, out, resolve, reject, mixSizeData, mixColorData) 
         ...itm
       }));
 
-    //if mixNuts and colorPercentageCalculationData, 
+    //if mixNuts and colorPercentageCalculationData,
     //then the data used to calculate percentages has to be of the same nuts level as the mixNuts data
     if (out.mixNuts_[out.nutsLevel_]) {
       let mixNutsLevel;
@@ -2925,7 +2909,7 @@ function indexStat(data, type, out, resolve, reject, mixSizeData, mixColorData) 
  * Groups data by country and calculates the sum for the given indicator
  *
  * @param {*} data //eurostat REST query response data
- * @return {*} 
+ * @return {*}
  */
 function getTotals(data) {
   //get total for each country
@@ -3002,7 +2986,3 @@ function getURLParamValue(paramName) {
     }
   }
 }
-
-
-
-
